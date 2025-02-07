@@ -1,14 +1,14 @@
-use std::env;
-use std::fs;
-use std::io;
+mod aegit;
+mod constants;
+mod paths;
 
-const GIT_DIRECTORY: &str = ".aegit";
+use std::env;
 
 fn main() {
     let command = env::args().nth(1);
-    // let args = env::args().skip(2);
+    let args = env::args().skip(2);
 
-    let directory = match env::current_dir() {
+    let repo_directory = match env::current_dir() {
         Ok(current_dir) =>  current_dir,
         Err(error) =>  panic!("{}", error)
     };
@@ -16,24 +16,20 @@ fn main() {
     match command {
         Some(cmd) => match cmd.as_str() {
             "init" => {
-                if let Err(e) = init(directory) {
+                if let Err(e) = aegit::init(&repo_directory) {
                     println!("Error: {}", e)
                 }
             },
+            "add" => {
+                for file in args {
+                    if let Err(e) = aegit::add(&repo_directory, file) {
+                        println!("Error: {}", e)
+                    }
+                }
+            }
             _ => println!("Wrong command!")
         },
         _ => println!("Command is missing!")
     }
 }
 
-fn init(directory: std::path::PathBuf) -> io::Result<()> {
-    let git_directory = directory.join(GIT_DIRECTORY);
-
-    if git_directory.exists() {
-        return Err(io::Error::new(io::ErrorKind::AlreadyExists, "Git is already initialized"));
-    }
-    fs::create_dir(git_directory.as_path())?;
-
-    println!("Git is initialized in {}", directory.display());
-    Ok(())
-}
